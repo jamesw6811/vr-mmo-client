@@ -31,9 +31,12 @@ public class UDPNetworkController : MonoBehaviour
 
         byte[] msgBytes = ms.GetBuffer();
         udpServer.Send(msgBytes, msgBytes.Length);
+
+
 	}
 	
 	// Update is called once per frame
+    private float headtest = 0;
 	void Update () {
         try
         {
@@ -56,6 +59,26 @@ public class UDPNetworkController : MonoBehaviour
         writePlayerUpdate(ms);
         byte[] msgBytes = ms.GetBuffer();
         udpServer.Send(msgBytes, msgBytes.Length);
+
+        Entity ent = new Entity();
+        ent.x = 0;
+        ent.y = 2;
+        ent.leftRight = 90;
+        ent.upDown = 45 * (float)Math.Sin(headtest);
+        headtest += 0.05f;
+        ent.id = 111;
+        ent.graphic = 0;
+        updateEntity(ent);
+
+        ent = new Entity();
+        ent.x = 1;
+        ent.y = 2;
+        ent.leftRight = 90;
+        ent.upDown = 45 * (float)Math.Sin(headtest);
+        headtest += 0.05f;
+        ent.id = 112;
+        ent.graphic = 1;
+        updateEntity(ent);
 	}
 
     private void recv(IAsyncResult ar)
@@ -223,8 +246,8 @@ public class UDPNetworkController : MonoBehaviour
             loadedResource = (GameObject)Resources.Load("EntityGraphics/placeholder", typeof(GameObject));
         }
 
-        Vector3 pos = new Vector3(ent.x, loadedResource.transform.position.y, ent.y);
-        Quaternion rot = Quaternion.Euler(new Vector3(ent.upDown, ent.leftRight, loadedResource.transform.rotation.eulerAngles.z));
+        Vector3 pos = new Vector3(0, loadedResource.transform.position.y, 0);
+        Quaternion rot = Quaternion.Euler(new Vector3(0, 0, loadedResource.transform.rotation.eulerAngles.z));
 
         GameObject entity = (GameObject)Instantiate(loadedResource, pos, rot);
         //entity.transform.localScale = Vector3.Scale (entity.transform.localScale, WORLD_SERVER_MODEL_SCALE_VECTOR);
@@ -246,6 +269,8 @@ public class UDPNetworkController : MonoBehaviour
             }
         }
 
+        updateEntity(ent);
+
         // TODO: Add collision
     }
 
@@ -260,9 +285,19 @@ public class UDPNetworkController : MonoBehaviour
         else
         {
             Vector3 pos = new Vector3(ent.x, 0, ent.y);
-            Quaternion rot = Quaternion.Euler(new Vector3(ent.upDown, ent.leftRight, 0));
             current.transform.position = pos;
-            current.transform.rotation = rot;
+            HeadNodder hn = current.GetComponent<HeadNodder>();
+            if (hn != null)
+            {
+                Quaternion rot = Quaternion.Euler(new Vector3(0, ent.leftRight, 0));
+                hn.nod(ent.upDown);
+                current.transform.rotation = rot;
+            }
+            else
+            {
+                Quaternion rot = Quaternion.Euler(new Vector3(ent.upDown, ent.leftRight, 0));
+                current.transform.rotation = rot;
+            }
         }
     }
 }

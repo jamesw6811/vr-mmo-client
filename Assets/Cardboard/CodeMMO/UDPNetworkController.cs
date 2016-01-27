@@ -59,7 +59,7 @@ public class UDPNetworkController : MonoBehaviour
         writePlayerUpdate(ms);
         byte[] msgBytes = ms.GetBuffer();
         udpServer.Send(msgBytes, msgBytes.Length);
-
+        /*
         Entity ent = new Entity();
         ent.x = 0;
         ent.y = 2;
@@ -79,6 +79,7 @@ public class UDPNetworkController : MonoBehaviour
         ent.id = 112;
         ent.graphic = 1;
         updateEntity(ent);
+         * */
 	}
 
     private void recv(IAsyncResult ar)
@@ -116,9 +117,10 @@ public class UDPNetworkController : MonoBehaviour
         float y = NetworkFloatToHostOrder(receiveBytes, offset + 4);
         float upDown = NetworkFloatToHostOrder(receiveBytes, offset + 8);
         float leftRight = NetworkFloatToHostOrder(receiveBytes, offset + 12);
+        float tilt = NetworkFloatToHostOrder(receiveBytes, offset + 16);
 
-        UInt16 id = NetworkUInt16ToHostOrder(receiveBytes, offset + 16);
-        UInt16 graphic = NetworkUInt16ToHostOrder(receiveBytes, offset + 18);
+        UInt16 id = NetworkUInt16ToHostOrder(receiveBytes, offset + 20);
+        UInt16 graphic = NetworkUInt16ToHostOrder(receiveBytes, offset + 22);
         /*
         Debug.Log("x: " + x);
         Debug.Log("y: " + y);
@@ -130,6 +132,7 @@ public class UDPNetworkController : MonoBehaviour
         ent.y = y;
         ent.upDown = upDown;
         ent.leftRight = leftRight;
+        ent.tilt = tilt;
         ent.id = id;
         ent.graphic = graphic;
         updateEntity(ent);
@@ -140,12 +143,14 @@ public class UDPNetworkController : MonoBehaviour
         ms.Write(playerUpdateBytes, 0, playerUpdateBytes.Length);
         float x = player.transform.position.x;
         float y = player.transform.position.z;
-        float upDown = player.transform.rotation.eulerAngles.x;
+        float upDown = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.x;
         float leftRight = player.transform.rotation.eulerAngles.y;
+        float tilt = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.z;
         writeAll(ms, HostToNetworkOrder(x));
         writeAll(ms, HostToNetworkOrder(y));
         writeAll(ms, HostToNetworkOrder(upDown));
         writeAll(ms, HostToNetworkOrder(leftRight));
+        writeAll(ms, HostToNetworkOrder(tilt));
     }
 
     public static void writeAll(MemoryStream ms, byte[] arr)
@@ -290,7 +295,7 @@ public class UDPNetworkController : MonoBehaviour
             if (hn != null)
             {
                 Quaternion rot = Quaternion.Euler(new Vector3(0, ent.leftRight, 0));
-                hn.nod(ent.upDown);
+                hn.nod(ent.upDown, ent.tilt);
                 current.transform.rotation = rot;
             }
             else

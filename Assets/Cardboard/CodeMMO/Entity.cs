@@ -20,6 +20,7 @@ namespace vrmmo
         public UInt16 graphic = 0;
         public float upDown = 0;
         public float leftRight = 0;
+        public float tilt = 0;
 		public Entity ()
 		{
 		}

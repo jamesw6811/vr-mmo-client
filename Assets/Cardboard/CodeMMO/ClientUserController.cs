@@ -40,6 +40,8 @@ namespace CodeMMO {
             Vector3 bodyTurn = this.transform.eulerAngles;
             bodyTurn.y = headTurn.y;
             this.transform.eulerAngles = bodyTurn;
+            Vector3 neckTurn = new Vector3(headTurn.x, bodyTurn.y, headTurn.z);
+            neck.transform.eulerAngles = neckTurn;
 
 			// read inputs and move
             float v = 0;

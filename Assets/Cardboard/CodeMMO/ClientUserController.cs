@@ -47,7 +47,7 @@ namespace CodeMMO {
             float v = 0;
             if (isMoving)
             {
-                v = 0.5f;
+                v = 1f;
             }
             else
             {

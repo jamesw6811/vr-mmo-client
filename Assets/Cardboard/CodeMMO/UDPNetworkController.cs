@@ -256,7 +256,7 @@ public class UDPNetworkController : MonoBehaviour
 
         GameObject entity = (GameObject)Instantiate(loadedResource, pos, rot);
         //entity.transform.localScale = Vector3.Scale (entity.transform.localScale, WORLD_SERVER_MODEL_SCALE_VECTOR);
-        entity.name = ent.id.ToString();
+        entity.name = serverIdToGameObjectName(ent.id.ToString());
 
         //Debug.Log ("vy:" + ent.vy);
         //Debug.Log ("vx:" + ent.vx);
@@ -279,10 +279,15 @@ public class UDPNetworkController : MonoBehaviour
         // TODO: Add collision
     }
 
+    private String serverIdToGameObjectName(String id)
+    {
+        return "serverId" + id;
+    }
+
     // server sending updated entity for moving, etc.
     public void updateEntity(Entity ent)
     {
-        GameObject current = GameObject.Find(ent.id.ToString());
+        GameObject current = GameObject.Find(serverIdToGameObjectName(ent.id.ToString()));
         if (current == null)
         {
             instantiateNewEntity(ent);

@@ -1,0 +1,3 @@
+[submodule "Assets/vr-mmo-server"]
+	path = Assets/vr-mmo-server
+	url = https://github.com/jamesw6811/vr-mmo-server.git

@@ -5,197 +5,88 @@ using System.Text;
 using System.IO;
 using System;
 using System.Net;
-using vrmmo;
+using VrMMOServer;
+using System.Collections.Generic;
 
-public class UDPNetworkController : MonoBehaviour
+public class UDPNetworkController : MonoBehaviour, GamePacketListener
 {
     [SerializeField]
     GameObject player;
-    private static byte[] protocolBytes = { 0xD8, 0x2A };
-    private static byte[] playerUpdateBytes = { 0x10, 0x00 };
-    private static byte[] entityUpdateBytes = { 0x10, 0x01 };
-    private static ArrayList receivedPackets = new ArrayList();
-    private static int port = 33333;
-    UdpClient udpServer;
-    IPEndPoint e = new IPEndPoint(IPAddress.Any, port);
+    GameNetworkingClient gc;
+    LinkedList<GamePacket> gamePackets;
 
 	// Use this for initialization
 	void Start () {
-        udpServer = new UdpClient("192.168.86.162", port);
-        
-        udpServer.BeginReceive(new AsyncCallback(recv), null);
-        
-        MemoryStream ms = new MemoryStream();
-        ms.Write(protocolBytes, 0, protocolBytes.Length);
-        writePlayerUpdate(ms);
-
-        byte[] msgBytes = ms.GetBuffer();
-        udpServer.Send(msgBytes, msgBytes.Length);
-
-
+        gamePackets = new LinkedList<GamePacket>();
+        gc = new GameNetworkingClient();
+        gc.registerPacketListener(this);
+        gc.startClient();
+        notifyPlayerUpdated();
 	}
 	
 	// Update is called once per frame
-    private float headtest = 0;
 	void Update () {
-        try
-        {
-            lock (receivedPackets)
-            {
-                foreach (byte[] item in receivedPackets)
-                {
-                    parseReceived(item);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e);
-        }
-        receivedPackets.Clear();
-
-        MemoryStream ms = new MemoryStream();
-        ms.Write(protocolBytes, 0, protocolBytes.Length);
-        writePlayerUpdate(ms);
-        byte[] msgBytes = ms.GetBuffer();
-        udpServer.Send(msgBytes, msgBytes.Length);
-        /*
-        Entity ent = new Entity();
-        ent.x = 0;
-        ent.y = 2;
-        ent.leftRight = 90;
-        ent.upDown = 45 * (float)Math.Sin(headtest);
-        headtest += 0.05f;
-        ent.id = 111;
-        ent.graphic = 0;
-        updateEntity(ent);
-
-        ent = new Entity();
-        ent.x = 1;
-        ent.y = 2;
-        ent.leftRight = 90;
-        ent.upDown = 45 * (float)Math.Sin(headtest);
-        headtest += 0.05f;
-        ent.id = 112;
-        ent.graphic = 1;
-        updateEntity(ent);
-         * */
+        handlePackets();
 	}
 
-    private void recv(IAsyncResult ar)
+    private void handlePackets()
     {
-        lock (receivedPackets)
-        {
-            Byte[] receiveBytes = udpServer.EndReceive(ar, ref e);
-            udpServer.BeginReceive(new AsyncCallback(recv), null);
-            receivedPackets.Add(receiveBytes);
+        lock (gamePackets){
+            foreach (GamePacket gp in gamePackets)
+            {
+                handlePacket(gp);
+            }
         }
     }
 
-    private void parseReceived(byte[] receiveBytes)
+    private void handlePacket(GamePacket gp)
     {
-        //Debug.Log("Packet received:");
-        //Debug.Log(BitConverter.ToString(receiveBytes));
-        bool correctProtocol = subByteEqual(receiveBytes, 0, protocolBytes);
-        if (!correctProtocol)
+        if (gp is EntityUpdatePacket)
         {
-            throw new Exception("Protocol not recognized.");
-        }
-
-        bool entityUpdate = subByteEqual(receiveBytes, 2, entityUpdateBytes);
-        bool playerUpdate = subByteEqual(receiveBytes, 2, playerUpdateBytes);
-        //Debug.Log("Entity update: " + entityUpdate);
-        if (entityUpdate)
+            onReceiveEntityUpdate((EntityUpdatePacket)gp);
+        } 
+        else
         {
-            onReceiveEntityUpdate(receiveBytes, 4);
+            throw new NotImplementedException("No code to handle GamePacket of this type:" + gp.ToString());
         }
     }
 
-    private void onReceiveEntityUpdate(byte[] receiveBytes, int offset)
+    public void receiveGamePacket(GamePacket gp)
     {
-        float x = NetworkFloatToHostOrder(receiveBytes, offset);
-        float y = NetworkFloatToHostOrder(receiveBytes, offset + 4);
-        float upDown = NetworkFloatToHostOrder(receiveBytes, offset + 8);
-        float leftRight = NetworkFloatToHostOrder(receiveBytes, offset + 12);
-        float tilt = NetworkFloatToHostOrder(receiveBytes, offset + 16);
+        lock (gamePackets)
+        {
+            gamePackets.AddLast(gp);
+        }
+    }
 
-        UInt16 id = NetworkUInt16ToHostOrder(receiveBytes, offset + 20);
-        UInt16 graphic = NetworkUInt16ToHostOrder(receiveBytes, offset + 22);
+    public void notifyPlayerUpdated()
+    {
+        EntityUpdatePacket eup = new EntityUpdatePacket();
+        eup.x = player.transform.position.x;
+        eup.y = player.transform.position.z;
+        eup.upDown = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.x;
+        eup.leftRight = player.transform.rotation.eulerAngles.y;
+        eup.tilt = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.z;
+        gc.sendUpdatePlayer(eup);
+    }
+    
+    private void onReceiveEntityUpdate(EntityUpdatePacket eup)
+    {
         /*
         Debug.Log("x: " + x);
         Debug.Log("y: " + y);
         Debug.Log("id: " + id);
         Debug.Log("graphic: " + graphic);
         */
-        Entity ent = new Entity();
-        ent.x = x;
-        ent.y = y;
-        ent.upDown = upDown;
-        ent.leftRight = leftRight;
-        ent.tilt = tilt;
-        ent.id = id;
-        ent.graphic = graphic;
+        GameEntity ent = new GameEntity();
+        ent.x = eup.x;
+        ent.y = eup.y;
+        ent.upDown = eup.upDown;
+        ent.leftRight = eup.leftRight;
+        ent.tilt = eup.tilt;
+        ent.id = eup.id;
+        ent.graphic = eup.graphic;
         updateEntity(ent);
-    }
-
-    public void writePlayerUpdate(MemoryStream ms)
-    {
-        ms.Write(playerUpdateBytes, 0, playerUpdateBytes.Length);
-        float x = player.transform.position.x;
-        float y = player.transform.position.z;
-        float upDown = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.x;
-        float leftRight = player.transform.rotation.eulerAngles.y;
-        float tilt = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.z;
-        writeAll(ms, HostToNetworkOrder(x));
-        writeAll(ms, HostToNetworkOrder(y));
-        writeAll(ms, HostToNetworkOrder(upDown));
-        writeAll(ms, HostToNetworkOrder(leftRight));
-        writeAll(ms, HostToNetworkOrder(tilt));
-    }
-
-    public static void writeAll(MemoryStream ms, byte[] arr)
-    {
-        ms.Write(arr, 0, arr.Length);
-    }
-
-    public static byte[] HostToNetworkOrder(byte[] host)
-    {
-        byte[] bytes = host;
-
-        if (System.BitConverter.IsLittleEndian)
-            System.Array.Reverse(bytes);
-
-        return bytes;
-    }
-
-    public static byte[] HostToNetworkOrder(float host)
-    {
-        return HostToNetworkOrder(System.BitConverter.GetBytes(host));
-    }
-
-    public static byte[] HostToNetworkOrder(UInt32 host)
-    {
-        return HostToNetworkOrder(System.BitConverter.GetBytes(host));
-    }
-
-    public static float NetworkFloatToHostOrder(byte[] network, int offset)
-    {
-        byte[] bytes = network;
-
-        if (System.BitConverter.IsLittleEndian)
-            System.Array.Reverse(bytes, offset, 4);
-
-        return System.BitConverter.ToSingle(bytes, offset);
-    }
-
-    public static UInt16 NetworkUInt16ToHostOrder(byte[] network, int offset)
-    {
-        byte[] bytes = network;
-
-        if (System.BitConverter.IsLittleEndian)
-            System.Array.Reverse(bytes, offset, 2);
-
-        return System.BitConverter.ToUInt16(bytes, offset);
     }
 
     public static byte[] StringToByteArrayFastest(string hex)
@@ -224,25 +115,7 @@ public class UDPNetworkController : MonoBehaviour
         //return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
     }
 
-    // a1 is big array to compare with offset a1offset
-    // b1 is specific array segment to look for
-    public bool subByteEqual(byte[] a1, int a1offset, byte[] b1)
-    {
-        int i;
-        i = 0;
-        while (i < b1.Length && (a1[i+a1offset] == b1[i])) //Earlier it was a1[i]!=b1[i]
-        {
-            i++;
-        }
-        if (i == b1.Length)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    void instantiateNewEntity(Entity ent)
+    void instantiateNewEntity(GameEntity ent)
     {
         GameObject loadedResource = (GameObject)Resources.Load("EntityGraphics/" + ent.graphic, typeof(GameObject));
         if (loadedResource == null)
@@ -260,6 +133,7 @@ public class UDPNetworkController : MonoBehaviour
 
         //Debug.Log ("vy:" + ent.vy);
         //Debug.Log ("vx:" + ent.vx);
+        /*
         if (ent.vx != 0 || ent.vy != 0)
         {
             Rigidbody rb = entity.GetComponent<Rigidbody>();
@@ -272,7 +146,7 @@ public class UDPNetworkController : MonoBehaviour
             {
                 Debug.LogError("No rigidbody on velocity object:" + ent.graphic);
             }
-        }
+        }*/
 
         updateEntity(ent);
 
@@ -285,7 +159,7 @@ public class UDPNetworkController : MonoBehaviour
     }
 
     // server sending updated entity for moving, etc.
-    public void updateEntity(Entity ent)
+    public void updateEntity(GameEntity ent)
     {
         GameObject current = GameObject.Find(serverIdToGameObjectName(ent.id.ToString()));
         if (current == null)

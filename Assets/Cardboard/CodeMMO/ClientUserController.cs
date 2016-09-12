@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 
 namespace CodeMMO {
 
@@ -39,13 +40,17 @@ namespace CodeMMO {
             Vector3 neckTurn = neck.transform.eulerAngles;
             Vector3 headTurn = head.transform.eulerAngles;
             Vector3 bodyTurn = this.transform.eulerAngles;
-            if (bodyTurn.y != headTurn.y || neckTurn != headTurn)
+            if (bodyTurn.y != headTurn.y || !(neckTurn == headTurn))
             {
                 updated = true;
+                Debug.Log("Not equal.");
+                Debug.Log(neckTurn == headTurn);
+                Debug.Log(bodyTurn.ToString());
+                Debug.Log(neckTurn.ToString());
+                Debug.Log(headTurn.ToString());
             }
             // Body
-            bodyTurn.y = headTurn.y;
-            this.transform.eulerAngles = bodyTurn;
+            this.transform.eulerAngles = new Vector3(0f, headTurn.y, 0f);
             // Neck
             neck.transform.eulerAngles = headTurn;
             // Head

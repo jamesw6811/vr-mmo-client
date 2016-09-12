@@ -13,12 +13,11 @@ namespace CodeMMO {
         private bool isMoving = false;
         [SerializeField]
         GameObject head;
-        [SerializeField]
-        GameObject neck;
+        Vector3 lastHeadAngle;
 		
 		private void Start()
 		{
-
+            lastHeadAngle = new Vector3(0, 0, 0);
 		}
 		
 		
@@ -37,24 +36,20 @@ namespace CodeMMO {
             bool updated = false;
 
             // Correct rotation to head
-            Vector3 neckTurn = neck.transform.eulerAngles;
             Vector3 headTurn = head.transform.eulerAngles;
             Vector3 bodyTurn = this.transform.eulerAngles;
-            if (bodyTurn.y != headTurn.y || !(neckTurn == headTurn))
+            if (lastHeadAngle != headTurn)
             {
+                lastHeadAngle = headTurn;
                 updated = true;
                 Debug.Log("Not equal.");
-                Debug.Log(neckTurn == headTurn);
                 Debug.Log(bodyTurn.ToString());
-                Debug.Log(neckTurn.ToString());
                 Debug.Log(headTurn.ToString());
+                // Body
+                this.transform.eulerAngles = new Vector3(0f, headTurn.y, 0f);
+                // Head
+                head.transform.eulerAngles = headTurn;
             }
-            // Body
-            this.transform.eulerAngles = new Vector3(0f, headTurn.y, 0f);
-            // Neck
-            neck.transform.eulerAngles = headTurn;
-            // Head
-            head.transform.eulerAngles = headTurn;
 
 			// read inputs and move
             float v = 0;

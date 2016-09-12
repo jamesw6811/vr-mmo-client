@@ -65,9 +65,9 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         EntityUpdatePacket eup = new EntityUpdatePacket();
         eup.x = player.transform.position.x;
         eup.y = player.transform.position.z;
-        eup.upDown = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.x;
+        eup.upDown = player.transform.FindChild("Head").rotation.eulerAngles.x;
         eup.leftRight = player.transform.rotation.eulerAngles.y;
-        eup.tilt = player.transform.FindChild("Neck").FindChild("Head").rotation.eulerAngles.z;
+        eup.tilt = player.transform.FindChild("Head").rotation.eulerAngles.z;
         gc.sendUpdatePlayer(eup);
     }
     

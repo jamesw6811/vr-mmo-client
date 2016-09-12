@@ -36,16 +36,20 @@ namespace CodeMMO {
             bool updated = false;
 
             // Correct rotation to head
+            Vector3 neckTurn = neck.transform.eulerAngles;
             Vector3 headTurn = head.transform.eulerAngles;
             Vector3 bodyTurn = this.transform.eulerAngles;
-            Vector3 neckTurn = new Vector3(headTurn.x, bodyTurn.y, headTurn.z);
-            if (bodyTurn.y != headTurn.y || neck.transform.eulerAngles != neckTurn)
+            if (bodyTurn.y != headTurn.y || neckTurn != headTurn)
             {
-                bodyTurn.y = headTurn.y;
-                this.transform.eulerAngles = bodyTurn;
-                neck.transform.eulerAngles = neckTurn;
                 updated = true;
             }
+            // Body
+            bodyTurn.y = headTurn.y;
+            this.transform.eulerAngles = bodyTurn;
+            // Neck
+            neck.transform.eulerAngles = headTurn;
+            // Head
+            head.transform.eulerAngles = headTurn;
 
 			// read inputs and move
             float v = 0;

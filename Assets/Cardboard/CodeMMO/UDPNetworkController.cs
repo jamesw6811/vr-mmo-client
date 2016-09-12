@@ -13,11 +13,11 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     [SerializeField]
     GameObject player;
     GameNetworkingClient gc;
-    LinkedList<GamePacket> gamePackets;
+    List<GamePacket> gamePackets;
 
 	// Use this for initialization
 	void Start () {
-        gamePackets = new LinkedList<GamePacket>();
+        gamePackets = new List<GamePacket>();
         gc = new GameNetworkingClient();
         gc.registerPacketListener(this);
         gc.startClient();
@@ -36,6 +36,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
             {
                 handlePacket(gp);
             }
+            gamePackets.Clear();
         }
     }
 
@@ -55,7 +56,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     {
         lock (gamePackets)
         {
-            gamePackets.AddLast(gp);
+            gamePackets.Add(gp);
         }
     }
 

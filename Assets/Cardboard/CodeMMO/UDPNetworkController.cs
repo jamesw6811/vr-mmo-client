@@ -46,6 +46,10 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         {
             onReceiveEntityUpdate((EntityUpdatePacket)gp);
         } 
+        else if (gp is PingPacket)
+        {
+
+        }
         else
         {
             throw new NotImplementedException("No code to handle GamePacket of this type:" + gp.ToString());

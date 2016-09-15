@@ -31,7 +31,9 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
 
     private void handlePackets()
     {
-        lock (gamePackets){
+        lock (gamePackets)
+        {
+            Debug.Log("handlePackets:" + Time.realtimeSinceStartup.ToString());
             foreach (GamePacket gp in gamePackets)
             {
                 handlePacket(gp);
@@ -60,6 +62,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     {
         lock (gamePackets)
         {
+            Debug.Log("receivedGamePacket");
             gamePackets.Add(gp);
         }
     }
@@ -73,6 +76,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         eup.leftRight = player.transform.rotation.eulerAngles.y;
         eup.tilt = player.transform.FindChild("Head").rotation.eulerAngles.z;
         gc.sendUpdatePlayer(eup);
+        Debug.Log("notifyPlayerUpdated");
     }
     
     private void onReceiveEntityUpdate(EntityUpdatePacket eup)
@@ -92,6 +96,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         ent.id = eup.id;
         ent.graphic = eup.graphic;
         updateEntity(ent);
+        Debug.Log("entityUpdate:" + Time.realtimeSinceStartup.ToString());
     }
 
     public static byte[] StringToByteArrayFastest(string hex)
@@ -188,5 +193,11 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
                 current.transform.rotation = rot;
             }
         }
+    }
+
+    void OnApplicationQuit()
+    {
+        gc.shutdown();
+        Debug.Log("Shut down networking.");
     }
 }

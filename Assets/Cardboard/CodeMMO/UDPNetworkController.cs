@@ -18,7 +18,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
 	// Use this for initialization
 	void Start () {
         gamePackets = new List<GamePacket>();
-        gc = new GameNetworkingClient();
+        gc = new GameNetworkingClient("127.0.0.1");
         gc.registerPacketListener(this);
         gc.startClient();
         notifyPlayerUpdated();
@@ -33,7 +33,6 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     {
         lock (gamePackets)
         {
-            Debug.Log("handlePackets:" + Time.realtimeSinceStartup.ToString());
             foreach (GamePacket gp in gamePackets)
             {
                 handlePacket(gp);
@@ -48,6 +47,10 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         {
             onReceiveEntityUpdate((EntityUpdatePacket)gp);
         } 
+        else if (gp is EntityRemovePacket)
+        {
+            onReceiveEntityRemove((EntityRemovePacket)gp);
+        }
         else if (gp is PingPacket)
         {
 
@@ -62,7 +65,6 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     {
         lock (gamePackets)
         {
-            Debug.Log("receivedGamePacket");
             gamePackets.Add(gp);
         }
     }
@@ -96,7 +98,11 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
         ent.id = eup.id;
         ent.graphic = eup.graphic;
         updateEntity(ent);
-        Debug.Log("entityUpdate:" + Time.realtimeSinceStartup.ToString());
+    }
+
+    private void onReceiveEntityRemove(EntityRemovePacket gp)
+    {
+        removeEntity(gp.id);
     }
 
     public static byte[] StringToByteArrayFastest(string hex)
@@ -192,6 +198,19 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
                 Quaternion rot = Quaternion.Euler(new Vector3(ent.upDown, ent.leftRight, 0));
                 current.transform.rotation = rot;
             }
+        }
+    }
+
+    public void removeEntity(UInt32 id)
+    {
+        GameObject current = GameObject.Find(serverIdToGameObjectName(id.ToString()));
+        if (current != null)
+        {
+            Destroy(current);
+        }
+        else
+        {
+            Debug.Log("Entity with id could not be found:" + serverIdToGameObjectName(id.ToString()));
         }
     }
 

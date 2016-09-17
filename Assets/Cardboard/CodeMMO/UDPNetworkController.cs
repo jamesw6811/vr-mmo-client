@@ -18,7 +18,7 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
 	// Use this for initialization
 	void Start () {
         gamePackets = new List<GamePacket>();
-        gc = new GameNetworkingClient("127.0.0.1");
+        gc = new GameNetworkingClient();
         gc.registerPacketListener(this);
         gc.startClient();
         notifyPlayerUpdated();

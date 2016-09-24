@@ -15,10 +15,20 @@ public class UDPNetworkController : MonoBehaviour, GamePacketListener
     GameNetworkingClient gc;
     List<GamePacket> gamePackets;
 
+    [SerializeField]
+    Boolean localServerTest = false;
+
 	// Use this for initialization
 	void Start () {
         gamePackets = new List<GamePacket>();
-        gc = new GameNetworkingClient();
+        if (localServerTest)
+        {
+            gc = new GameNetworkingClient("127.0.0.1");
+        }
+        else
+        {
+            gc = new GameNetworkingClient();
+        }
         gc.registerPacketListener(this);
         gc.startClient();
         notifyPlayerUpdated();
